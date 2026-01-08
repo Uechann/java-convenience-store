@@ -1,7 +1,6 @@
 package store.global.config;
 
 import store.controller.ConvenienceController;
-import store.domain.model.Order;
 import store.domain.repository.OrderRepository;
 import store.domain.repository.ProductPromotionRepository;
 import store.domain.repository.ProductRepository;

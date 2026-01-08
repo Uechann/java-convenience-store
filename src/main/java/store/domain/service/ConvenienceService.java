@@ -1,5 +1,6 @@
 package store.domain.service;
 
+import camp.nextstep.edu.missionutils.DateTimes;
 import store.domain.model.Order;
 import store.domain.model.Product;
 import store.domain.model.ProductPromotion;
@@ -11,6 +12,7 @@ import store.domain.repository.PromotionRepository;
 import store.dto.*;
 import store.global.util.Parser;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -161,16 +163,21 @@ public class ConvenienceService {
             // 프로모션이 있는지 검사
             Optional<ProductPromotion> optionalProductPromotion = productPromotionRepository.findByName(pendingOrder.getProduct().getName());
             if (optionalProductPromotion.isPresent()) {
-                System.out.println("진입");
+                // 프로모션 기간 검사
+
                 ProductPromotion productPromotion = optionalProductPromotion.get();
                 Product product = productPromotion.getProduct();
                 Promotion promotion = productPromotion.getPromotion();
+                LocalDateTime now = DateTimes.now();
 
-                if (pendingOrder.getQuantity() >= promotion.getGetQuantity() + promotion.getBuyQuantity()) {
-                    presentationResponses.add(PresentationResponse.of(product.getName(), promotion.getGetQuantity()));
-                    productPromotion.decreaseQuantity(pendingOrder.getQuantity());
-                    promotionDiscount += promotion.getGetQuantity() * product.getPrice();
+                if (now.toLocalDate().isAfter(promotion.getStartDate()) && now.toLocalDate().isBefore(promotion.getEndDate())) {
+                    if (pendingOrder.getQuantity() >= promotion.getGetQuantity() + promotion.getBuyQuantity()) {
+                        presentationResponses.add(PresentationResponse.of(product.getName(), promotion.getGetQuantity()));
+                        productPromotion.decreaseQuantity(pendingOrder.getQuantity());
+                        promotionDiscount += promotion.getGetQuantity() * product.getPrice();
+                    }
                 }
+
             }
 
             // 프로모션이 없고 멤버십 할인이 Y일때
