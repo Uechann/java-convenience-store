@@ -1,6 +1,8 @@
 package store.global.config;
 
 import store.controller.ConvenienceController;
+import store.domain.model.Order;
+import store.domain.repository.OrderRepository;
 import store.domain.repository.ProductPromotionRepository;
 import store.domain.repository.ProductRepository;
 import store.domain.repository.PromotionRepository;
@@ -16,6 +18,8 @@ public final class DIConfig {
     private final ProductRepository productRepository = new ProductRepository();
     private final PromotionRepository promotionRepository = new PromotionRepository();
     private final ProductPromotionRepository productPromotionRepository = new ProductPromotionRepository();
+    private final OrderRepository orderRepository = new OrderRepository();
+
 
     public ConvenienceController convenienceController() {
         return new ConvenienceController(
@@ -40,6 +44,7 @@ public final class DIConfig {
                 productRepository(),
                 promotionRepository(),
                 productPromotionRepository(),
+                orderRepository(),
                 stringParser()
         );
     }
@@ -68,4 +73,7 @@ public final class DIConfig {
         return productPromotionRepository;
     }
 
+    public OrderRepository orderRepository() {
+        return orderRepository;
+    }
 }

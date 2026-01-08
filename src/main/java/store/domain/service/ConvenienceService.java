@@ -1,11 +1,15 @@
 package store.domain.service;
 
+import store.domain.model.Order;
 import store.domain.model.Product;
 import store.domain.model.ProductPromotion;
+import store.domain.model.Promotion;
+import store.domain.repository.OrderRepository;
 import store.domain.repository.ProductPromotionRepository;
 import store.domain.repository.ProductRepository;
 import store.domain.repository.PromotionRepository;
 import store.dto.ProductResponseDto;
+import store.dto.PromotionLeakResponseDto;
 import store.global.util.Parser;
 
 import java.util.ArrayList;
@@ -20,17 +24,20 @@ public class ConvenienceService {
     private final ProductRepository productRepository;
     private final PromotionRepository promotionRepository;
     private final ProductPromotionRepository productPromotionRepository;
+    private final OrderRepository orderRepository;
     private final Parser<String> stringParser;
 
     public ConvenienceService(
             ProductRepository productRepository,
             PromotionRepository promotionRepository,
             ProductPromotionRepository productPromotionRepository,
+            OrderRepository orderRepository,
             Parser<String> stringParser
     ) {
         this.productRepository = productRepository;
         this.promotionRepository = promotionRepository;
         this.productPromotionRepository = productPromotionRepository;
+        this.orderRepository = orderRepository;
         this.stringParser = stringParser;
     }
 
@@ -40,7 +47,6 @@ public class ConvenienceService {
         List<Product> allProducts = productRepository.findAll();
         for (Product product : allProducts) {
             Optional<ProductPromotion> optional = productPromotionRepository.findByName(product.getName());
-
             // 프로모션이 있으면
             if (optional.isPresent()) {
                 ProductPromotion productPromotion = optional.get();
@@ -64,9 +70,10 @@ public class ConvenienceService {
         for (String productAndQuantity : productAndQuantitySplit) {
             String substring = productAndQuantity.substring(1, productAndQuantity.length() - 1);
             List<String> productQuantity = stringParser.parse(substring, "-");
-            // 상품 존재 여부 검증
             String productName = productQuantity.getFirst();
             int quantity = Integer.parseInt(productQuantity.getLast());
+
+            // 상품 존재 여부 검증
             Product product = productRepository.findByName(productName)
                     .orElseThrow(() -> new IllegalArgumentException(PRODUCT_NOT_FOUND.getMessage()));
 
@@ -74,6 +81,31 @@ public class ConvenienceService {
             if (!product.isValidQuantity(quantity)) {
                 throw new IllegalArgumentException(OVER_PRODUCT_STOCK.getMessage());
             }
+            orderRepository.save(Order.of(product, quantity));
         }
+    }
+
+    public PromotionLeakResponseDto isPromotionButLeakQuantity() {
+        List<Order> pendingOrders = orderRepository.findPendingOrders();
+        for (Order order : pendingOrders) {
+            Product product = order.getProduct();
+            int quantity = order.getQuantity();
+
+            // 프로모션이 존재하면 수량이 맞는지 검증
+            Optional<ProductPromotion> optional = productPromotionRepository.findByName(product.getName());
+            if (optional.isPresent()) {
+                Promotion promotion = optional.get().getPromotion();
+                if (quantity < promotion.getBuyQuantity() + promotion.getGetQuantity()) {
+                    return PromotionLeakResponseDto.of(order.getId(), product.getName(), promotion.getGetQuantity());
+                }
+            }
+        }
+        return null;
+    }
+
+    // 프로모션 상품 구매 수량 추가
+    public void increasePromotionQuantity(PromotionLeakResponseDto promotionLeakResponseDto) {
+        Order order = orderRepository.findById(promotionLeakResponseDto.orderId()).get();
+        order.increaseQuantity(promotionLeakResponseDto.freeQuantity());
     }
 }

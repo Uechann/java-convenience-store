@@ -1,8 +1,11 @@
 package store.controller;
 
+import com.sun.source.tree.IfTree;
 import store.domain.service.ConvenienceService;
 import store.domain.service.FileService;
 import store.dto.ProductResponseDto;
+import store.dto.PromotionLeakResponseDto;
+import store.global.validator.InputValidator;
 import store.view.InputView;
 import store.view.OutputView;
 
@@ -36,10 +39,22 @@ public class ConvenienceController {
             List<ProductResponseDto> productsStock = convenienceService.getProductsStock();
             // 상품 재고 현황 출력
             outputView.outputProductStocks(productsStock);
-            // 상품과 수량 구매 입력
-            inputView.inputProductAndQuantity();
+            // 상품과 수량 구매 입력후 주문 접수
+            String productAndQuantityInput = inputView.inputProductAndQuantity();
+            convenienceService.buyProduct(productAndQuantityInput);
 
+            // 정산
             // 프로모션과 멤버십 여부 입력
+            PromotionLeakResponseDto promotionButLeakQuantity = convenienceService.isPromotionButLeakQuantity();
+            if (promotionButLeakQuantity != null) {
+                outputView.outputAdditionalPromotionDecision(promotionButLeakQuantity);
+                String additionalPromotionDecision = inputView.inputAdditionalPromotionDecision();
+                InputValidator.validateYNPattern(additionalPromotionDecision);
+                if (additionalPromotionDecision.equals("Y")) {
+                    // service에서 order 수량 수정
+                    convenienceService.increasePromotionQuantity(promotionButLeakQuantity);
+                }
+            }
 
             // 영수증 출력
 
