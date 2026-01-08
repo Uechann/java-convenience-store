@@ -2,9 +2,13 @@ package store.global.constant;
 
 public class Pattern {
 
-    // 기능 입력
-    public static final String INPUT_FUNCTION_PATTERN = "^1|2|3|4|Q$";
+    public static final String MENU = "[가-힣]+";
+    public static final String QUANTITY = "[1-9][0-9]*";
+    public static final String MENU_QUANTITY = "["+ MENU + "-" + QUANTITY + "]";
 
-    // 출석 시간
-    public static final String INPUT_TIME_PATTERN = "^([01][0-9]|[2][0-3]):([0-5][0-9])$";
+    // 상품과 수량 패턴
+    public static final String PRODUCT_AND_QUANTITY_PATTERN = "^" + MENU_QUANTITY + "(," + MENU_QUANTITY + ")*" + "$";
+
+    // Y/N 패턴
+    public static final String Y_OR_N= "^[Y|N]$";
 }

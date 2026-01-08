@@ -27,4 +27,8 @@ public class Product {
     public int getQuantity() {
         return quantity;
     }
+
+    public boolean isValidQuantity(int quantity) {
+        return this.quantity >= quantity;
+    }
 }
