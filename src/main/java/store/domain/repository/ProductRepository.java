@@ -8,8 +8,9 @@ public class ProductRepository {
 
     private final Map<String, Product> productMap = new LinkedHashMap<>();
 
-    public void save(Product product) {
+    public Product save(Product product) {
         productMap.put(product.getName(), product);
+        return product;
     }
 
     public Optional<Product> findByName(String productName) {

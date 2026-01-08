@@ -8,8 +8,9 @@ public class ProductPromotionRepository {
 
     private final Map<String, ProductPromotion> productPromotionMap = new LinkedHashMap<>();
 
-    public void save(ProductPromotion productPromotion) {
+    public ProductPromotion save(ProductPromotion productPromotion) {
         productPromotionMap.put(productPromotion.getProduct().getName(), productPromotion);
+        return productPromotion;
     }
 
     public Optional<ProductPromotion> findByName(String productName) {
@@ -18,5 +19,13 @@ public class ProductPromotionRepository {
 
     public List<ProductPromotion> findAll() {
         return new ArrayList<>(productPromotionMap.values());
+    }
+
+    public Optional<String> findPromotionNameByProductName(String productName) {
+        String promotionName = null;
+        if (productPromotionMap.get(productName) != null) {
+            promotionName = productPromotionMap.get(productName).getPromotion().getName();
+        }
+        return Optional.ofNullable(promotionName);
     }
 }

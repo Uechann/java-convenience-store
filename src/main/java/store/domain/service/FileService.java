@@ -14,6 +14,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public class FileService {
     private final ProductRepository productRepository;
@@ -36,6 +37,9 @@ public class FileService {
         try (BufferedReader reader = new BufferedReader(new FileReader(promotions))) {
             String line;
             while ((line = reader.readLine()) != null) {
+                if (line.startsWith("name")) {
+                    continue;
+                }
                 List<String> promotion = stringParser.parse(line, ",");
                 String name = promotion.get(0);
                 int buyQuantity = Integer.parseInt(promotion.get(1));
@@ -49,22 +53,35 @@ public class FileService {
         }
 
         // 상품 초기화 및 프로모션 연결
-        File products = new File("src/main/resources/product.md");
+        File products = new File("src/main/resources/products.md");
         try (BufferedReader reader = new BufferedReader(new FileReader(products))) {
             String line;
             while ((line = reader.readLine()) != null) {
+                if (line.startsWith("name")) {
+                    continue;
+                }
+
                 List<String> productSplit = stringParser.parse(line, ",");
                 String name = productSplit.get(0);
                 int price = Integer.parseInt(productSplit.get(1));
                 int quantity = Integer.parseInt(productSplit.get(2));
-                Product product = Product.of(name, price, quantity);
-                productRepository.save(product);
+
+                Optional<Product> productOptional = productRepository.findByName(name);
+                // 상품이 있으면 수량 증가 시키고
+                productOptional.ifPresent(product -> product.increaseQuantity(quantity));
+                // 없으면 생성
+                Product product = productOptional.orElseGet(() -> productRepository.save(Product.of(name, price, quantity)));
 
                 String promotionName = productSplit.get(3);
                 if (!promotionName.equals("null")) {
                     Promotion promotion = promotionRepository.findByName(promotionName)
                             .orElseThrow(() -> new IllegalArgumentException("프로모션 없음"));
-                    productPromotionRepository.save(ProductPromotion.of(product, promotion));
+
+                    Optional<ProductPromotion> productPromotionOptional = productPromotionRepository.findByName(name);
+                    // 있으면 프로모션 수량 증가
+                    productPromotionOptional.ifPresent(productPromotion -> productPromotion.increaseQuantity(quantity));
+                    // 없으면 생성
+                    productPromotionOptional.orElseGet(() -> productPromotionRepository.save(ProductPromotion.of(product, promotion, quantity)));
                 }
             }
         } catch (IOException e) {

@@ -1,35 +1,51 @@
 package store.global.config;
 
+import store.controller.ConvenienceController;
+import store.domain.repository.ProductPromotionRepository;
+import store.domain.repository.ProductRepository;
+import store.domain.repository.PromotionRepository;
+import store.domain.service.ConvenienceService;
+import store.domain.service.FileService;
+import store.global.util.Parser;
+import store.global.util.StringParser;
+import store.view.InputView;
+import store.view.OutputView;
+
 public final class DIConfig {
 
-    private final CrewRepository crewRepository = new CrewRepository();
-    private final MissionRepository missionRepository = new MissionRepository();
-    private final MatchRepository matchRepository = new MatchRepository();
+    private final ProductRepository productRepository = new ProductRepository();
+    private final PromotionRepository promotionRepository = new PromotionRepository();
+    private final ProductPromotionRepository productPromotionRepository = new ProductPromotionRepository();
 
-    public PairMatchingController pairMatchingController() {
-        return new PairMatchingController(
+    public ConvenienceController convenienceController() {
+        return new ConvenienceController(
                 fileService(),
-                initialService(),
+                convenienceService(),
                 inputView(),
-                pairService(),
                 outputView()
         );
     }
 
     public FileService fileService() {
-        return new FileService(crewRepository());
-    }
-
-    public InitialService initialService() {
-        return new InitialService(missionRepository());
-    }
-
-    public PairService pairService() {
-        return new PairService(
-                missionRepository(),
-                crewRepository(),
-                matchRepository()
+        return new FileService(
+                productRepository(),
+                promotionRepository(),
+                productPromotionRepository(),
+                stringParser()
         );
+    }
+
+    public ConvenienceService convenienceService() {
+        return new ConvenienceService(
+                productRepository(),
+                promotionRepository(),
+                productPromotionRepository(),
+                stringParser()
+        );
+    }
+
+    public Parser<String> stringParser() {
+        return new StringParser();
     }
 
     public InputView inputView() {
@@ -40,15 +56,16 @@ public final class DIConfig {
         return new OutputView();
     }
 
-    public CrewRepository crewRepository() {
-        return crewRepository;
+    public ProductRepository productRepository() {
+        return productRepository;
     }
 
-    public MissionRepository missionRepository() {
-        return missionRepository;
+    public PromotionRepository promotionRepository() {
+        return promotionRepository;
     }
 
-    public MatchRepository matchRepository() {
-        return matchRepository;
+    public ProductPromotionRepository productPromotionRepository() {
+        return productPromotionRepository;
     }
+
 }

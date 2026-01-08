@@ -1,11 +1,16 @@
 package store.domain.service;
 
 import store.domain.model.Product;
+import store.domain.model.ProductPromotion;
+import store.domain.repository.ProductPromotionRepository;
 import store.domain.repository.ProductRepository;
 import store.domain.repository.PromotionRepository;
+import store.dto.ProductResponseDto;
 import store.global.util.Parser;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static store.global.exception.ErrorMessage.OVER_PRODUCT_STOCK;
 import static store.global.exception.ErrorMessage.PRODUCT_NOT_FOUND;
@@ -14,12 +19,43 @@ public class ConvenienceService {
 
     private final ProductRepository productRepository;
     private final PromotionRepository promotionRepository;
+    private final ProductPromotionRepository productPromotionRepository;
     private final Parser<String> stringParser;
 
-    public ConvenienceService(ProductRepository productRepository, PromotionRepository promotionRepository, Parser<String> stringParser) {
+    public ConvenienceService(
+            ProductRepository productRepository,
+            PromotionRepository promotionRepository,
+            ProductPromotionRepository productPromotionRepository,
+            Parser<String> stringParser
+    ) {
         this.productRepository = productRepository;
         this.promotionRepository = promotionRepository;
+        this.productPromotionRepository = productPromotionRepository;
         this.stringParser = stringParser;
+    }
+
+    // 총 재고 현황 조회
+    public List<ProductResponseDto> getProductsStock() {
+        List<ProductResponseDto> responseDtos = new ArrayList<>();
+        List<Product> allProducts = productRepository.findAll();
+        for (Product product : allProducts) {
+            Optional<ProductPromotion> optional = productPromotionRepository.findByName(product.getName());
+
+            // 프로모션이 있으면
+            if (optional.isPresent()) {
+                ProductPromotion productPromotion = optional.get();
+                responseDtos.add(ProductResponseDto.of(
+                        product.getName(), product.getPrice(), productPromotion.getQuantity(), productPromotion.getPromotion().getName()));
+
+                int leftQuantity = product.getQuantity() - productPromotion.getQuantity();
+                responseDtos.add(ProductResponseDto.of(product.getName(), product.getPrice(), leftQuantity, ""));
+            }
+            // 프로모션 없음
+            if (optional.isEmpty()) {
+                responseDtos.add(ProductResponseDto.of(product.getName(), product.getPrice(), product.getQuantity(), ""));
+            }
+        }
+        return responseDtos;
     }
 
     public void buyProduct(String productAndQuantities) {

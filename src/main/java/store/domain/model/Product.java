@@ -6,6 +6,8 @@ public class Product {
     private int price;
     private int quantity;
 
+
+
     private Product(String name, int price, int quantity) {
         this.name = name;
         this.price = price;
@@ -30,5 +32,9 @@ public class Product {
 
     public boolean isValidQuantity(int quantity) {
         return this.quantity >= quantity;
+    }
+
+    public void increaseQuantity(int quantity) {
+        this.quantity += quantity;
     }
 }

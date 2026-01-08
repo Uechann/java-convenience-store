@@ -4,14 +4,16 @@ public class ProductPromotion {
 
     private Product product;
     private Promotion promotion;
+    private int quantity;
 
-    private ProductPromotion(Product product, Promotion promotion) {
+    private ProductPromotion(Product product, Promotion promotion, int quantity) {
         this.product = product;
         this.promotion = promotion;
+        this.quantity = quantity;
     }
 
-    public static ProductPromotion of(Product product, Promotion promotion) {
-        return new ProductPromotion(product, promotion);
+    public static ProductPromotion of(Product product, Promotion promotion, int quantity) {
+        return new ProductPromotion(product, promotion, quantity);
     }
 
     public Product getProduct() {
@@ -20,5 +22,13 @@ public class ProductPromotion {
 
     public Promotion getPromotion() {
         return promotion;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
+    public void increaseQuantity(int quantity) {
+        this.quantity += quantity;
     }
 }
