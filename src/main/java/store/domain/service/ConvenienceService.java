@@ -10,6 +10,7 @@ import store.domain.repository.ProductRepository;
 import store.domain.repository.PromotionRepository;
 import store.dto.ProductResponseDto;
 import store.dto.PromotionLeakResponseDto;
+import store.dto.PromotionQuantityLeakResponseDto;
 import store.global.util.Parser;
 
 import java.util.ArrayList;
@@ -107,5 +108,32 @@ public class ConvenienceService {
     public void increasePromotionQuantity(PromotionLeakResponseDto promotionLeakResponseDto) {
         Order order = orderRepository.findById(promotionLeakResponseDto.orderId()).get();
         order.increaseQuantity(promotionLeakResponseDto.freeQuantity());
+    }
+
+    // 프로모션 재고 부족으로 일부 수량을 프로모션 혜택 없이 결제 기능
+    public PromotionQuantityLeakResponseDto isPromotionQuantityLeak() {
+        List<Order> pendingOrders = orderRepository.findPendingOrders();
+
+        for (Order order : pendingOrders) {
+            Product product = order.getProduct();
+            int orderQuantity = order.getQuantity();
+
+            // 프로모션이 존재하면 프로모션 수량보다 초과인지 검증
+            Optional<ProductPromotion> optional = productPromotionRepository.findByName(product.getName());
+            if (optional.isPresent()) {
+                int promotionQuantity = optional.get().getQuantity();
+
+                if (orderQuantity > promotionQuantity) {
+                    int leakQuantity = orderQuantity - promotionQuantity;
+                    return PromotionQuantityLeakResponseDto.of(order.getId(), product.getName(), leakQuantity);
+                }
+            }
+        }
+        return null;
+    }
+
+    public void decreaseLeakPromotionOrderQuantity(PromotionQuantityLeakResponseDto responseDto) {
+        Order order = orderRepository.findById(responseDto.orderId()).get();
+        order.increaseQuantity(responseDto.leakQuantity());
     }
 }

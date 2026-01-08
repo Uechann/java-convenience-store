@@ -5,6 +5,7 @@ import store.domain.service.ConvenienceService;
 import store.domain.service.FileService;
 import store.dto.ProductResponseDto;
 import store.dto.PromotionLeakResponseDto;
+import store.dto.PromotionQuantityLeakResponseDto;
 import store.global.validator.InputValidator;
 import store.view.InputView;
 import store.view.OutputView;
@@ -55,6 +56,20 @@ public class ConvenienceController {
                     convenienceService.increasePromotionQuantity(promotionButLeakQuantity);
                 }
             }
+
+            // 프로모션 재고가 부족한지 검증
+            PromotionQuantityLeakResponseDto promotionQuantityLeak = convenienceService.isPromotionQuantityLeak();
+            if (promotionQuantityLeak != null) {
+                outputView.outputPromotionQuantityLeak(promotionQuantityLeak);
+                String notPromotionDecision = inputView.inputPurchaseNotPromotionDecision();
+                InputValidator.validateYNPattern(notPromotionDecision);
+
+                if (notPromotionDecision.equals("N")) {
+                    convenienceService.decreaseLeakPromotionOrderQuantity(promotionQuantityLeak);
+                }
+            }
+
+            // 멤버십 할인 여부 입력
 
             // 영수증 출력
 
