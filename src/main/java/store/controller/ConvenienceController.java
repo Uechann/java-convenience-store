@@ -1,17 +1,13 @@
 package store.controller;
 
-import com.sun.source.tree.IfTree;
 import store.domain.service.ConvenienceService;
 import store.domain.service.FileService;
 import store.dto.ProductReceiptResponse;
-import store.dto.ProductResponseDto;
 import store.dto.PromotionLeakResponseDto;
 import store.dto.PromotionQuantityLeakResponseDto;
 import store.global.validator.InputValidator;
 import store.view.InputView;
 import store.view.OutputView;
-
-import java.util.List;
 
 import static store.global.util.Retry.retry;
 

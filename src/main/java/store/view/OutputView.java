@@ -25,14 +25,12 @@ public class OutputView {
     }
 
     // 프로모션 추가 여부 안내 메시지 출력
-    // 현 재 { 상 품 명 } 은 ( 는 ) 1 개 를 무 료 로 더 받 을 수 있 습 니 다 .
     public void outputAdditionalPromotionDecision(PromotionLeakResponseDto responseDto) {
         System.out.println("현재 " + responseDto.productName()+"은(는) " + responseDto.freeQuantity()+"개를 무료로 더 받을 수 있습니다.");
     }
 
 
     // 프로모션 재고 부족으로 일부수량 정가로 구매 안내 메시지
-    // 현 재 { 상 품 명 } { 수 량 } 개 는 프 로 모 션 할 인 이 적 용 되 지 않 습 니 다.
     public void outputPromotionQuantityLeak(PromotionQuantityLeakResponseDto responseDto) {
         System.out.println("현재 " + responseDto.productName()+ " " + responseDto.leakQuantity() + "개는 프로모션 할인이 적용되지 않습니다.");
     }

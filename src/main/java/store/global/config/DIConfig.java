@@ -42,7 +42,6 @@ public final class DIConfig {
     public ConvenienceService convenienceService() {
         return new ConvenienceService(
                 productRepository(),
-                promotionRepository(),
                 productPromotionRepository(),
                 orderRepository(),
                 stringParser()

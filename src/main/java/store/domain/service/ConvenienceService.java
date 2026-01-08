@@ -21,20 +21,17 @@ import static store.global.exception.ErrorMessage.PRODUCT_NOT_FOUND;
 public class ConvenienceService {
 
     private final ProductRepository productRepository;
-    private final PromotionRepository promotionRepository;
     private final ProductPromotionRepository productPromotionRepository;
     private final OrderRepository orderRepository;
     private final Parser<String> stringParser;
 
     public ConvenienceService(
             ProductRepository productRepository,
-            PromotionRepository promotionRepository,
             ProductPromotionRepository productPromotionRepository,
             OrderRepository orderRepository,
             Parser<String> stringParser
     ) {
         this.productRepository = productRepository;
-        this.promotionRepository = promotionRepository;
         this.productPromotionRepository = productPromotionRepository;
         this.orderRepository = orderRepository;
         this.stringParser = stringParser;
@@ -153,41 +150,38 @@ public class ConvenienceService {
         int totalPrice = 0;
         int promotionDiscount = 0;
         int membershipDiscount = 0;
-        int payPrice = 0;
 
-        // Y 멤버십 할인 적용
-        if (memberShipDecision.equals("Y")) {
+        for (Order pendingOrder : pendingOrders) {
+            buyProductResponses.add(BuyProductResponse.of(pendingOrder));
+            pendingOrder.getProduct().decreaseQuantity(pendingOrder.getQuantity());
 
-        }
+            totalCount += pendingOrder.getQuantity();
+            totalPrice += pendingOrder.getProduct().getPrice() * pendingOrder.getQuantity();
 
-        if (memberShipDecision.equals("N")) {
-            for (Order pendingOrder : pendingOrders) {
-                buyProductResponses.add(BuyProductResponse.of(pendingOrder));
-                pendingOrder.getProduct().decreaseQuantity(pendingOrder.getQuantity());
+            // 프로모션이 있는지 검사
+            Optional<ProductPromotion> optionalProductPromotion = productPromotionRepository.findByName(pendingOrder.getProduct().getName());
+            if (optionalProductPromotion.isPresent()) {
+                System.out.println("진입");
+                ProductPromotion productPromotion = optionalProductPromotion.get();
+                Product product = productPromotion.getProduct();
+                Promotion promotion = productPromotion.getPromotion();
 
-                totalCount += pendingOrder.getQuantity();
-                totalPrice += pendingOrder.getProduct().getPrice() * pendingOrder.getQuantity();
-
-                // 프로모션이 있는지 검사
-                Optional<ProductPromotion> optionalProductPromotion = productPromotionRepository.findByName(pendingOrder.getProduct().getName());
-                if (optionalProductPromotion.isPresent()) {
-                    System.out.println("진입");
-                    ProductPromotion productPromotion = optionalProductPromotion.get();
-                    Product product = productPromotion.getProduct();
-                    Promotion promotion = productPromotion.getPromotion();
-
-                    if (pendingOrder.getQuantity() >= promotion.getGetQuantity() + promotion.getBuyQuantity()) {
-                        presentationResponses.add(PresentationResponse.of(product.getName(), promotion.getGetQuantity()));
-                        productPromotion.decreaseQuantity(pendingOrder.getQuantity());
-                        promotionDiscount += promotion.getGetQuantity() * product.getPrice();
-                    }
+                if (pendingOrder.getQuantity() >= promotion.getGetQuantity() + promotion.getBuyQuantity()) {
+                    presentationResponses.add(PresentationResponse.of(product.getName(), promotion.getGetQuantity()));
+                    productPromotion.decreaseQuantity(pendingOrder.getQuantity());
+                    promotionDiscount += promotion.getGetQuantity() * product.getPrice();
                 }
-
-                // order complete 처리
-                pendingOrder.orderComplete();
             }
-            payPrice = totalPrice - promotionDiscount - membershipDiscount;
+
+            // 프로모션이 없고 멤버십 할인이 Y일때
+            if (optionalProductPromotion.isEmpty() && memberShipDecision.equals("Y")) {
+
+            }
+
+            // order complete 처리
+            pendingOrder.orderComplete();
         }
+
         return ProductReceiptResponse.of(
                 buyProductResponses,
                 presentationResponses,
@@ -195,7 +189,7 @@ public class ConvenienceService {
                 totalPrice,
                 promotionDiscount,
                 membershipDiscount,
-                payPrice
+                totalPrice - promotionDiscount - membershipDiscount
         );
     }
 }
