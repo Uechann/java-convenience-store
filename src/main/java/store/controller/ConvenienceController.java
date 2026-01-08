@@ -12,6 +12,8 @@ import store.view.OutputView;
 
 import java.util.List;
 
+import static store.global.util.Retry.retry;
+
 public class ConvenienceController {
 
     private final FileService fileService;
@@ -36,46 +38,60 @@ public class ConvenienceController {
 
         while (true) {
             // 시작 메시지 출력
-            outputView.outputStartMessage();
-            List<ProductResponseDto> productsStock = convenienceService.getProductsStock();
-            // 상품 재고 현황 출력
-            outputView.outputProductStocks(productsStock);
-            // 상품과 수량 구매 입력후 주문 접수
-            String productAndQuantityInput = inputView.inputProductAndQuantity();
-            convenienceService.buyProduct(productAndQuantityInput);
+            String retry = retry(() -> {
 
-            // 정산
-            // 프로모션과 멤버십 여부 입력
-            PromotionLeakResponseDto promotionButLeakQuantity = convenienceService.isPromotionButLeakQuantity();
-            if (promotionButLeakQuantity != null) {
-                outputView.outputAdditionalPromotionDecision(promotionButLeakQuantity);
-                String additionalPromotionDecision = inputView.inputAdditionalPromotionDecision();
-                InputValidator.validateYNPattern(additionalPromotionDecision);
-                if (additionalPromotionDecision.equals("Y")) {
-                    // service에서 order 수량 수정
-                    convenienceService.increasePromotionQuantity(promotionButLeakQuantity);
+                outputView.outputStartMessage();
+                List<ProductResponseDto> productsStock = convenienceService.getProductsStock();
+                // 상품 재고 현황 출력
+                outputView.outputProductStocks(productsStock);
+                // 상품과 수량 구매 입력후 주문 접수
+                String productAndQuantityInput = inputView.inputProductAndQuantity();
+                InputValidator.validateProductQuantityPattern(productAndQuantityInput);
+                convenienceService.buyProduct(productAndQuantityInput);
+
+                // 정산
+                // 프로모션과 멤버십 여부 입력
+                PromotionLeakResponseDto promotionButLeakQuantity = convenienceService.isPromotionButLeakQuantity();
+                if (promotionButLeakQuantity != null) {
+                    outputView.outputAdditionalPromotionDecision(promotionButLeakQuantity);
+                    String additionalPromotionDecision = inputView.inputAdditionalPromotionDecision();
+                    InputValidator.validateYNPattern(additionalPromotionDecision);
+                    if (additionalPromotionDecision.equals("Y")) {
+                        // service에서 order 수량 수정
+                        convenienceService.increasePromotionQuantity(promotionButLeakQuantity);
+                    }
                 }
-            }
 
-            // 프로모션 재고가 부족한지 검증
-            PromotionQuantityLeakResponseDto promotionQuantityLeak = convenienceService.isPromotionQuantityLeak();
-            if (promotionQuantityLeak != null) {
-                outputView.outputPromotionQuantityLeak(promotionQuantityLeak);
-                String notPromotionDecision = inputView.inputPurchaseNotPromotionDecision();
-                InputValidator.validateYNPattern(notPromotionDecision);
+                // 프로모션 재고가 부족한지 검증
+                PromotionQuantityLeakResponseDto promotionQuantityLeak = convenienceService.isPromotionQuantityLeak();
+                if (promotionQuantityLeak != null) {
+                    outputView.outputPromotionQuantityLeak(promotionQuantityLeak);
+                    String notPromotionDecision = inputView.inputPurchaseNotPromotionDecision();
+                    InputValidator.validateYNPattern(notPromotionDecision);
 
-                if (notPromotionDecision.equals("N")) {
-                    convenienceService.decreaseLeakPromotionOrderQuantity(promotionQuantityLeak);
+                    if (notPromotionDecision.equals("N")) {
+                        convenienceService.decreaseLeakPromotionOrderQuantity(promotionQuantityLeak);
+                    }
                 }
+
+                // 멤버십 할인 여부 입력
+                String membershipDecision = inputView.inputMembershipDecision();
+                InputValidator.validateYNPattern(membershipDecision);
+
+
+                // 영수증 출력
+
+                // 재구매 의사 입력
+                String inputAdditionalPurchase = inputView.inputAdditionalPurchase();
+                InputValidator.validateYNPattern(inputAdditionalPurchase);
+                if (inputAdditionalPurchase.equals("N")) {
+                    return "N";
+                }
+                return null;
+            });
+            if (retry.equals("N")) {
+                break;
             }
-
-            // 멤버십 할인 여부 입력
-
-            // 영수증 출력
-
-            // 재구매 의사 입력
-            inputView.inputAdditionalPurchase();
-
         }
     }
 }
