@@ -8,9 +8,7 @@ import store.domain.repository.OrderRepository;
 import store.domain.repository.ProductPromotionRepository;
 import store.domain.repository.ProductRepository;
 import store.domain.repository.PromotionRepository;
-import store.dto.ProductResponseDto;
-import store.dto.PromotionLeakResponseDto;
-import store.dto.PromotionQuantityLeakResponseDto;
+import store.dto.*;
 import store.global.util.Parser;
 
 import java.util.ArrayList;
@@ -135,5 +133,69 @@ public class ConvenienceService {
     public void decreaseLeakPromotionOrderQuantity(PromotionQuantityLeakResponseDto responseDto) {
         Order order = orderRepository.findById(responseDto.orderId()).get();
         order.increaseQuantity(responseDto.leakQuantity());
+    }
+
+    // 주문 정산
+    // N 멤버십 없이
+    //  - 구매 상품 내역: 상품명, 수량, 가격
+    //  - 증정 상품: 프로모션에 따라 무료로 제공된 증정 상품 목록
+    //  - 금액 정보
+    //    - 총 구매액: 구매한 상품의 총 수량과 총 금액
+    //    - 행사 할인: 프로모션에 의해 할인된 금액
+    //    - 멤버십 할인: 멤버십 할인: 멤버십에 의해 추가로 할인된 금액
+    //    - 최종 결제 금액:
+    public ProductReceiptResponse settlePendingOrder(String memberShipDecision) {
+
+        List<Order> pendingOrders = orderRepository.findPendingOrders();
+        List<BuyProductResponse> buyProductResponses = new ArrayList<>();
+        List<PresentationResponse> presentationResponses = new ArrayList<>();
+        int totalCount = 0;
+        int totalPrice = 0;
+        int promotionDiscount = 0;
+        int membershipDiscount = 0;
+        int payPrice = 0;
+
+        // Y 멤버십 할인 적용
+        if (memberShipDecision.equals("Y")) {
+
+        }
+
+        if (memberShipDecision.equals("N")) {
+            for (Order pendingOrder : pendingOrders) {
+                buyProductResponses.add(BuyProductResponse.of(pendingOrder));
+                pendingOrder.getProduct().decreaseQuantity(pendingOrder.getQuantity());
+
+                totalCount += pendingOrder.getQuantity();
+                totalPrice += pendingOrder.getProduct().getPrice() * pendingOrder.getQuantity();
+
+                // 프로모션이 있는지 검사
+                Optional<ProductPromotion> optionalProductPromotion = productPromotionRepository.findByName(pendingOrder.getProduct().getName());
+                if (optionalProductPromotion.isPresent()) {
+                    System.out.println("진입");
+                    ProductPromotion productPromotion = optionalProductPromotion.get();
+                    Product product = productPromotion.getProduct();
+                    Promotion promotion = productPromotion.getPromotion();
+
+                    if (pendingOrder.getQuantity() >= promotion.getGetQuantity() + promotion.getBuyQuantity()) {
+                        presentationResponses.add(PresentationResponse.of(product.getName(), promotion.getGetQuantity()));
+                        productPromotion.decreaseQuantity(pendingOrder.getQuantity());
+                        promotionDiscount += promotion.getGetQuantity() * product.getPrice();
+                    }
+                }
+
+                // order complete 처리
+                pendingOrder.orderComplete();
+            }
+            payPrice = totalPrice - promotionDiscount - membershipDiscount;
+        }
+        return ProductReceiptResponse.of(
+                buyProductResponses,
+                presentationResponses,
+                totalCount,
+                totalPrice,
+                promotionDiscount,
+                membershipDiscount,
+                payPrice
+        );
     }
 }

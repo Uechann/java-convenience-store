@@ -44,4 +44,8 @@ public class Order {
     public void decreaseQuantity(int quantity) {
         this.quantity -= quantity;
     }
+
+    public void orderComplete() {
+        orderStatus = OrderStatus.COMPLETE;
+    }
 }

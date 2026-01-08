@@ -6,8 +6,6 @@ public class Product {
     private int price;
     private int quantity;
 
-
-
     private Product(String name, int price, int quantity) {
         this.name = name;
         this.price = price;
@@ -36,5 +34,9 @@ public class Product {
 
     public void increaseQuantity(int quantity) {
         this.quantity += quantity;
+    }
+
+    public void decreaseQuantity(int quantity) {
+        this.quantity -= quantity;
     }
 }

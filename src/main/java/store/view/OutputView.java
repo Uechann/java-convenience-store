@@ -1,5 +1,6 @@
 package store.view;
 
+import store.dto.ProductReceiptResponse;
 import store.dto.ProductResponseDto;
 import store.dto.PromotionLeakResponseDto;
 import store.dto.PromotionQuantityLeakResponseDto;
@@ -34,5 +35,9 @@ public class OutputView {
     // 현 재 { 상 품 명 } { 수 량 } 개 는 프 로 모 션 할 인 이 적 용 되 지 않 습 니 다.
     public void outputPromotionQuantityLeak(PromotionQuantityLeakResponseDto responseDto) {
         System.out.println("현재 " + responseDto.productName()+ " " + responseDto.leakQuantity() + "개는 프로모션 할인이 적용되지 않습니다.");
+    }
+
+    public void outputProductReceipt(ProductReceiptResponse productReceiptResponse) {
+        System.out.println(productReceiptResponse.toString());
     }
 }
